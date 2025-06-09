@@ -1,0 +1,9 @@
+streamlit
+openai
+pdfplumber
+pandas
+python-dotenv
+fastapi
+uvicorn
+gunicorn
+python-multipart

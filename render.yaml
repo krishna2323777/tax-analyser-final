@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: corporate-tax-analyzer
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api:app --config gunicorn.conf.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0 
