@@ -4,6 +4,6 @@ pdfplumber
 pandas
 python-dotenv
 fastapi
-uvicorn
+uvicorn[standard]
 gunicorn
 python-multipart
