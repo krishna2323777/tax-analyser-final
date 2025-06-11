@@ -1,9 +1,5 @@
 streamlit
-<<<<<<< HEAD
-openai==1.12.0
-=======
 openai>=1.0.0
->>>>>>> 44b69d86c69d64da32b9c4f72df6fb67e104e2b4
 pdfplumber
 pandas
 python-dotenv
@@ -11,3 +7,4 @@ fastapi
 uvicorn[standard]
 gunicorn
 python-multipart
+
