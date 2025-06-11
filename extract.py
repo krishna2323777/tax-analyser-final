@@ -81,37 +81,23 @@ Instructions:
     combined = f"DOCUMENT TEXT:\n{text}\n\nTABLE DATA:\n{tables_data}"
     try:
         print("Making OpenAI API call...")
-        try:
-            client = openai.OpenAI()
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": PROMPT.strip()},
-                    {"role": "user", "content": combined[:15000]}
-                ],
-                temperature=0,
-                max_tokens=2000
-            )
-            print("OpenAI API call successful")
-            result = response.choices[0].message.content.strip()
-            if result.startswith("```"):
-                result = re.sub(r'```json\n?|```', '', result).strip()
-            print(f"Raw AI response: {result[:200]}...")  # Print first 200 chars of response
-            data = json.loads(result)
-            data = fill_quarters_from_overall(data)
-            return data
-        except openai.AuthenticationError as e:
-            print(f"OpenAI Authentication Error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"OpenAI API Authentication Error: {str(e)}")
-        except openai.APIError as e:
-            print(f"OpenAI API Error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
-        except openai.RateLimitError as e:
-            print(f"OpenAI Rate Limit Error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"OpenAI Rate Limit Error: {str(e)}")
-        except Exception as e:
-            print(f"Unexpected OpenAI Error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Unexpected OpenAI Error: {str(e)}")
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": PROMPT.strip()},
+                {"role": "user", "content": combined[:15000]}
+            ],
+            temperature=0,
+            max_tokens=2000
+        )
+        print("OpenAI API call successful")
+        result = response.choices[0].message.content.strip()
+        if result.startswith("```"):
+            result = re.sub(r'```json\n?|```', '', result).strip()
+        print(f"Raw AI response: {result[:200]}...")  # Print first 200 chars of response
+        data = json.loads(result)
+        data = fill_quarters_from_overall(data)
+        return data
     except Exception as e:
         print(f"Error in AI extraction: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error in AI extraction: {str(e)}")
