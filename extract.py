@@ -4,13 +4,15 @@ import json
 import pdfplumber
 import pandas as pd
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 from typing import Dict, Any
 
 # Load environment variables
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
-openai.api_key = openai_key
+if not openai_key:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+client = OpenAI(api_key=openai_key)
 
 # ─── Utility Functions ─────────────────────────
 def clean_numeric_value(value: str) -> float:
@@ -62,7 +64,7 @@ Instructions:
 """
     combined = f"DOCUMENT TEXT:\n{text}\n\nTABLE DATA:\n{tables_data}"
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": PROMPT.strip()},

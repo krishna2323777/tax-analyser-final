@@ -1,5 +1,5 @@
 streamlit
-openai
+openai==1.12.0
 pdfplumber
 pandas
 python-dotenv

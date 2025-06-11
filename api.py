@@ -21,6 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"message": "Corporate Tax Analyzer API is running"}
+
 @app.post("/extract")
 async def extract(file: UploadFile = File(...)):
     content = await file.read()
