@@ -82,7 +82,8 @@ Instructions:
     try:
         print("Making OpenAI API call...")
         try:
-            response = openai.ChatCompletion.create(
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": PROMPT.strip()},
@@ -99,13 +100,13 @@ Instructions:
             data = json.loads(result)
             data = fill_quarters_from_overall(data)
             return data
-        except openai.error.AuthenticationError as e:
+        except openai.AuthenticationError as e:
             print(f"OpenAI Authentication Error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"OpenAI API Authentication Error: {str(e)}")
-        except openai.error.APIError as e:
+        except openai.APIError as e:
             print(f"OpenAI API Error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
-        except openai.error.RateLimitError as e:
+        except openai.RateLimitError as e:
             print(f"OpenAI Rate Limit Error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"OpenAI Rate Limit Error: {str(e)}")
         except Exception as e:
