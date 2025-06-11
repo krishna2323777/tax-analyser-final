@@ -6,10 +6,13 @@ import pandas as pd
 from dotenv import load_dotenv
 import openai
 from typing import Dict, Any
+from fastapi import HTTPException
 
 # Load environment variables
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
+print(f"OpenAI API Key loaded: {'Yes' if openai_key else 'No'}")
+print(f"OpenAI API Key length: {len(openai_key) if openai_key else 0}")
 if not openai_key:
     raise ValueError("OPENAI_API_KEY environment variable is not set")
 openai.api_key = openai_key
@@ -32,6 +35,7 @@ def calculate_netherlands_tax(taxable_income: float) -> float:
     return 200000 * 0.19 + (taxable_income - 200000) * 0.258
 
 def extract_financial_data_with_ai(text: str, tables_data: str) -> Dict[str, Any]:
+    print(f"Starting AI extraction with text length: {len(text)} and tables length: {len(tables_data)}")
     PROMPT = """
 You are a Corporate Tax Analyzer AI assistant specialized in extracting financial data from Dutch corporate documents.
 Your job is to extract clean, structured financial data from Dutch corporate tax documents. These documents may include trial balances, profit-loss statements, or invoices in either PDF or CSV form.
@@ -76,38 +80,40 @@ Instructions:
 """
     combined = f"DOCUMENT TEXT:\n{text}\n\nTABLE DATA:\n{tables_data}"
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": PROMPT.strip()},
-                {"role": "user", "content": combined[:15000]}
-            ],
-            temperature=0,
-            max_tokens=2000
-        )
-        result = response.choices[0].message.content.strip()
-        if result.startswith("```"):
-            result = re.sub(r'```json\n?|```', '', result).strip()
-        data = json.loads(result)
-        data = fill_quarters_from_overall(data)
-        return data
+        print("Making OpenAI API call...")
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": PROMPT.strip()},
+                    {"role": "user", "content": combined[:15000]}
+                ],
+                temperature=0,
+                max_tokens=2000
+            )
+            print("OpenAI API call successful")
+            result = response.choices[0].message.content.strip()
+            if result.startswith("```"):
+                result = re.sub(r'```json\n?|```', '', result).strip()
+            print(f"Raw AI response: {result[:200]}...")  # Print first 200 chars of response
+            data = json.loads(result)
+            data = fill_quarters_from_overall(data)
+            return data
+        except openai.error.AuthenticationError as e:
+            print(f"OpenAI Authentication Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"OpenAI API Authentication Error: {str(e)}")
+        except openai.error.APIError as e:
+            print(f"OpenAI API Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
+        except openai.error.RateLimitError as e:
+            print(f"OpenAI Rate Limit Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"OpenAI Rate Limit Error: {str(e)}")
+        except Exception as e:
+            print(f"Unexpected OpenAI Error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Unexpected OpenAI Error: {str(e)}")
     except Exception as e:
-        return {
-            "company_name": "Not found",
-            "country": "Not found",
-            "total_revenue": "",
-            "total_expenses": "",
-            "depreciation": "",
-            "deductions": "",
-            "net_taxable_income": "",
-            "final_tax_owed": "",
-            "quarters": {
-                "Q1": {"revenue": "", "expenses": "", "depreciation": "", "deductions": "", "net_taxable_income": "", "final_tax_owed": ""},
-                "Q2": {"revenue": "", "expenses": "", "depreciation": "", "deductions": "", "net_taxable_income": "", "final_tax_owed": ""},
-                "Q3": {"revenue": "", "expenses": "", "depreciation": "", "deductions": "", "net_taxable_income": "", "final_tax_owed": ""},
-                "Q4": {"revenue": "", "expenses": "", "depreciation": "", "deductions": "", "net_taxable_income": "", "final_tax_owed": ""}
-            }
-        }
+        print(f"Error in AI extraction: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error in AI extraction: {str(e)}")
 
 def fill_quarters_from_overall(data: dict) -> dict:
     # Only fill if quarters are missing or empty
